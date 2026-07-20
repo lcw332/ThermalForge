@@ -64,7 +64,12 @@ jobs:
       - name: Create archive
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          APP_DIR="ThermalForgeApp.app"
           ARCHIVE="ThermalForge-${VERSION}-macOS.zip"
+
+          # Embed CLI inside .app for self-contained daemon setup
+          cp ".build/release/thermalforge" "$APP_DIR/Contents/Resources/thermalforge"
+
           STAGING="_staging"
           mkdir -p "$STAGING"
           cp -R "ThermalForgeApp.app" "$STAGING/"
