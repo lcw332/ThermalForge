@@ -80,11 +80,13 @@ jobs:
 
       - name: Upload release asset
         run: |
+          # Remove old release if exists
+          gh release delete "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" -y 2>/dev/null || true
           gh release create "${{ github.ref_name }}" \
             --repo "${{ github.repository }}" \
             --title "${{ github.ref_name }}" \
             --generate-notes \
-            --clobber \
             "${{ env.archive }}"
         env:
           GH_TOKEN: ${{ github.token }}
