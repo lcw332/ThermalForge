@@ -66,9 +66,7 @@ jobs:
           mkdir -p "$STAGING"
           cp -R "ThermalForgeApp.app" "$STAGING/"
           cp ".build/release/thermalforge" "$STAGING/"
-          cd "$STAGING" && ditto -c -k --sequesterRsrc --keepParent \
-            ThermalForgeApp.app thermalforge \
-            "../$ARCHIVE"
+          cd "$STAGING" && zip -r -X "../$ARCHIVE" .
           cd .. && rm -rf "$STAGING"
           echo "archive=$ARCHIVE" >> $GITHUB_ENV
 
