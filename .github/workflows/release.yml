@@ -84,6 +84,7 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "${{ github.ref_name }}" \
             --generate-notes \
+            --clobber \
             "${{ env.archive }}"
         env:
           GH_TOKEN: ${{ github.token }}
