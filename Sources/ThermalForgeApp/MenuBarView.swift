@@ -10,12 +10,13 @@ import ThermalForgeCore
 
 struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
-                Text("ThermalForge")
+                Text(L10n.appName)
                     .font(.headline)
                 Spacer()
                 stateIndicator
@@ -28,13 +29,13 @@ struct MenuBarView: View {
 
             // Fan speeds
             if let status = appState.latestStatus {
-                SectionHeader(title: "FANS")
+                SectionHeader(title: L10n.fans)
                 ForEach(status.fans, id: \.index) { fan in
                     HStack {
-                        Text("Fan \(fan.index)")
+                        Text(L10n.fanIndex(fan.index))
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text("\(fan.actualRPM) RPM")
+                        Text(L10n.rpm(fan.actualRPM))
                             .font(.system(.body, design: .monospaced))
                     }
                     .padding(.horizontal, 12)
@@ -44,14 +45,14 @@ struct MenuBarView: View {
                 Divider().padding(.vertical, 4)
 
                 // Temperatures
-                SectionHeader(title: "TEMPERATURES")
-                TemperatureRow(label: "CPU", value: peakTemp(prefixes: ["TC", "Tp"]), fahrenheit: appState.useFahrenheit)
-                TemperatureRow(label: "GPU", value: peakTemp(prefixes: ["TG", "Tg"]), fahrenheit: appState.useFahrenheit)
-                TemperatureRow(label: "RAM", value: peakTemp(prefixes: ["TR", "Tm", "TM"]), fahrenheit: appState.useFahrenheit)
-                TemperatureRow(label: "SSD", value: peakTemp(prefixes: ["TH"]), fahrenheit: appState.useFahrenheit)
-                TemperatureRow(label: "Ambient", value: peakTemp(prefixes: ["TA"]), fahrenheit: appState.useFahrenheit)
+                SectionHeader(title: L10n.temperatures)
+                TemperatureRow(label: L10n.cpu, value: peakTemp(prefixes: ["TC", "Tp"]), fahrenheit: appState.useFahrenheit)
+                TemperatureRow(label: L10n.gpu, value: peakTemp(prefixes: ["TG", "Tg"]), fahrenheit: appState.useFahrenheit)
+                TemperatureRow(label: L10n.ram, value: peakTemp(prefixes: ["TR", "Tm", "TM"]), fahrenheit: appState.useFahrenheit)
+                TemperatureRow(label: L10n.ssd, value: peakTemp(prefixes: ["TH"]), fahrenheit: appState.useFahrenheit)
+                TemperatureRow(label: L10n.ambient, value: peakTemp(prefixes: ["TA"]), fahrenheit: appState.useFahrenheit)
             } else {
-                Text("Reading sensors...")
+                Text(L10n.readingSensors)
                     .foregroundStyle(.secondary)
                     .padding(12)
             }
@@ -59,7 +60,7 @@ struct MenuBarView: View {
             Divider().padding(.vertical, 4)
 
             // Profile picker
-            SectionHeader(title: "PROFILE")
+            SectionHeader(title: L10n.profile)
             Picker("Profile", selection: Binding(
                 get: { appState.activeProfile.id },
                 set: { id in
@@ -78,7 +79,7 @@ struct MenuBarView: View {
                                 // Max: show instant trigger temp
                                 let startC = profile.curve.startTemp
                                 let startDisp = appState.useFahrenheit ? startC * 9 / 5 + 32 : startC
-                                Text("\(Int(startDisp))°\(unit) instant")
+                                Text("\(Int(startDisp))°\(unit) \(L10n.instant)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             } else {
@@ -104,14 +105,14 @@ struct MenuBarView: View {
             // Quick actions
             HStack(spacing: 8) {
                 Button(action: { appState.setSmart() }) {
-                    Label("Smart", systemImage: "fan.fill")
+                    Label(L10n.smart, systemImage: "fan.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .tint(.orange)
 
                 Button(action: { appState.resetAuto() }) {
-                    Label("Default", systemImage: "arrow.counterclockwise")
+                    Label(L10n.defaultValue, systemImage: "arrow.counterclockwise")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -121,16 +122,27 @@ struct MenuBarView: View {
             Divider().padding(.vertical, 4)
 
             // Footer
-            Toggle("°F / °C", isOn: $appState.useFahrenheit)
+            Toggle(L10n.fahrenheitToggle, isOn: $appState.useFahrenheit)
                 .padding(.horizontal, 12)
-            Toggle("Launch at Login", isOn: $appState.launchAtLogin)
+            Toggle(L10n.launchAtLogin, isOn: $appState.launchAtLogin)
                 .padding(.horizontal, 12)
 
-            Button(action: { NSApp.terminate(nil) }) {
-                Text("Quit ThermalForge")
+            HStack {
+                Button(action: { NSApp.terminate(nil) }) {
+                    Text(L10n.quitApp)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button(action: openSettings) {
+                    Image(systemName: "gearshape")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(L10n.settings)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
             .padding(.horizontal, 12)
             .padding(.top, 4)
             .padding(.bottom, 10)
@@ -140,11 +152,16 @@ struct MenuBarView: View {
 
     // MARK: - Helpers
 
+    private func openSettings() {
+        openWindow(id: "settings")
+        NSApp.activate()
+    }
+
     @ViewBuilder
     private var stateIndicator: some View {
         switch appState.monitorState {
         case .safetyOverride:
-            Label("SAFETY", systemImage: "exclamationmark.triangle.fill")
+            Label(L10n.safety, systemImage: "exclamationmark.triangle.fill")
                 .font(.caption)
                 .foregroundStyle(.red)
         case .active(let name):
@@ -152,7 +169,7 @@ struct MenuBarView: View {
                 .font(.caption)
                 .foregroundStyle(.orange)
         case .idle:
-            Label("Idle", systemImage: "fan")
+            Label(L10n.idle, systemImage: "fan")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -167,7 +184,7 @@ struct MenuBarView: View {
 
 // MARK: - Subviews
 
-private struct SectionHeader: View {
+struct SectionHeader: View {
     let title: String
     var body: some View {
         Text(title)
@@ -178,7 +195,7 @@ private struct SectionHeader: View {
     }
 }
 
-private struct TemperatureRow: View {
+struct TemperatureRow: View {
     let label: String
     let value: Float?
     var fahrenheit: Bool = false

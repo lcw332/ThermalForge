@@ -42,6 +42,13 @@ struct ThermalForgeApp: App {
             MenuBarLabel(state: appState.monitorState, maxTemp: appState.maxTemp, fahrenheit: appState.useFahrenheit)
         }
         .menuBarExtraStyle(.window)
+
+        Window(L10n.settings, id: "settings") {
+            SettingsView()
+                .environmentObject(appState)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
     }
 }
 
