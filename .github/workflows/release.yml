@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build CLI
+        run: swift build -c release --product thermalforge
+
+      - name: Build GUI
+        run: swift build -c release --product ThermalForgeApp
+
+      - name: Package .app bundle
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          APP_DIR="ThermalForgeApp.app"
+
+          mkdir -p "$APP_DIR/Contents/MacOS"
+          mkdir -p "$APP_DIR/Contents/Resources"
+
+          cp ".build/release/ThermalForgeApp" "$APP_DIR/Contents/MacOS/ThermalForgeApp"
+
+          if [ -f "ThermalForge.icns" ]; then
+            cp "ThermalForge.icns" "$APP_DIR/Contents/Resources/ThermalForgeApp.icns"
+          fi
+
+          cat > "$APP_DIR/Contents/Info.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>ThermalForgeApp</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.lcw332.ThermalForgeApp</string>
+            <key>CFBundleName</key>
+            <string>ThermalForge</string>
+            <key>CFBundleDisplayName</key>
+            <string>ThermalForge</string>
+            <key>CFBundleVersion</key>
+            <string>${VERSION}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${VERSION}</string>
+            <key>CFBundleIconFile</key>
+            <string>ThermalForgeApp</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>14.0</string>
+            <key>LSUIElement</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Create archive
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHIVE="ThermalForge-${VERSION}-macOS.zip"
+          STAGING="_staging"
+          mkdir -p "$STAGING"
+          cp -R "ThermalForgeApp.app" "$STAGING/"
+          cp ".build/release/thermalforge" "$STAGING/"
+          cd "$STAGING" && ditto -c -k --sequesterRsrc --keepParent \
+            ThermalForgeApp.app thermalforge \
+            "../$ARCHIVE"
+          cd .. && rm -rf "$STAGING"
+          echo "archive=$ARCHIVE" >> $GITHUB_ENV
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.archive }}
+          generate_release_notes: true
